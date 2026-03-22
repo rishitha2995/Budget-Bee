@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Expense Tracker{% endblock %}
+
+{% block head %}
+<script>
+  const monthLabels = {{ month_labels | tojson | safe }};
+  const monthExpenses = {{ month_expenses_data | tojson | safe }};
+  const dailyLabels = {{ daily_labels | tojson | safe }};
+  const dailyExpenses = {{ daily_data | tojson | safe }};
+  const categoryBreakdown = {{ category_breakdown | tojson | safe }};
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row gy-4">
+  <div class="col-12">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+      <div>
+        <h2 class="fw-bold">Dashboard</h2>
+        <p class="text-muted mb-0">A smarter view of your spending.</p>
+      </div>
+      <form class="row row-cols-lg-auto g-2 align-items-center" method="post" action="{{ url_for('dashboard.update_budget') }}">
+        <div class="col-12">
+          <label class="mb-0 text-muted" for="budget">Budget</label>
+          <input type="number" step="1" min="0" class="form-control form-control-sm" name="budget" id="budget" value="{{ budget }}" style="max-width: 160px;" />
+        </div>
+        <div class="col-12">
+          <label class="mb-0 text-muted" for="threshold_low">Low %</label>
+          <input type="number" step="1" min="0" max="100" class="form-control form-control-sm" name="threshold_low" id="threshold_low" value="{{ (thresholds.low * 100) | round(0) }}" style="max-width: 120px;" />
+        </div>
+        <div class="col-12">
+          <label class="mb-0 text-muted" for="threshold_high">High %</label>
+          <input type="number" step="1" min="0" max="100" class="form-control form-control-sm" name="threshold_high" id="threshold_high" value="{{ (thresholds.high * 100) | round(0) }}" style="max-width: 120px;" />
+        </div>
+        <div class="col-12">
+          <button class="btn btn-sm btn-primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="budgetInfo" data-level="{{ alert_level }}" data-alert="{% if alert_level == 'exceeded' %}You've exceeded your monthly budget.{% elif alert_level == 'high' %}You've used over 75% of your budget.{% elif alert_level == 'medium' %}You've used over 50% of your budget.{% else %}You're within your budget.{% endif %}"></div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="card shadow-sm dashboard-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+          💰
+        </div>
+        <div>
+          <h6 class="text-muted mb-1">Total income</h6>
+          <div class="fs-4 fw-bold">₹{{ "%.2f" | format(total_income) }}</div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent border-top-0">
+        <div class="small text-muted">
+          Baseline: ${{ "%.2f" | format(baseline) }}
+        </div>
+        <div class="small text-muted">
+          Ranges:
+          <span class="badge bg-success">Low ≤ ${{ "%.2f" | format(level_low_value) }}</span>
+          <span class="badge bg-warning text-dark">Moderate ≤ ${{ "%.2f" | format(level_high_value) }}</span>
+          <span class="badge bg-danger">High &gt; ${{ "%.2f" | format(level_high_value) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="card shadow-sm dashboard-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="icon bg-danger text-white rounded-circle d-flex align-items-center justify-content-center">
+          🛒
+        </div>
+        <div>
+          <h6 class="text-muted mb-1">Total expenses</h6>
+          <div class="fs-4 fw-bold">₹{{ "%.2f" | format(total_expenses) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="card shadow-sm dashboard-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="icon bg-success text-white rounded-circle d-flex align-items-center justify-content-center">
+          🧮
+        </div>
+        <div>
+          <h6 class="text-muted mb-1">Savings (monthly)</h6>
+          <div class="fs-4 fw-bold">₹{{ "%.2f" | format(savings_monthly) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="card shadow-sm dashboard-card {% if alert_level == 'exceeded' %}bg-danger text-white border-danger{% elif alert_level == 'high' %}bg-warning text-dark border-warning{% elif alert_level == 'medium' %}bg-info text-dark border-info{% else %}bg-white{% endif %}" style="min-height: 170px;">
+      <div class="card-body d-flex flex-column justify-content-center align-items-start gap-3">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <div class="icon {% if alert_level == 'exceeded' %}bg-danger text-white{% elif alert_level == 'high' %}bg-warning text-dark{% elif alert_level == 'medium' %}bg-info text-dark{% else %}bg-success text-white{% endif %} rounded-circle d-flex align-items-center justify-content-center">
+            🎯
+          </div>
+          <div>
+            <h6 class="text-muted mb-1">Remaining budget</h6>
+            <div class="fs-4 fw-bold">₹{{ "%.2f" | format(remaining_budget) }}</div>
+          </div>
+        </div>
+        <div class="w-100">
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar {% if alert_level == 'exceeded' %}bg-danger{% elif alert_level == 'high' %}bg-warning{% elif alert_level == 'medium' %}bg-info{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ budget_usage_pct }}%;" aria-valuenow="{{ budget_usage_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Daily spending trend</h5>
+        <canvas id="dailyChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Monthly expenses comparison</h5>
+        <canvas id="monthlyChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Category breakdown</h5>
+        <canvas id="categoryChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">AI suggestions</h5>
+        {% if ai_suggestions %}
+        <ul class="list-unstyled mb-0">
+          {% for suggestion in ai_suggestions %}
+          <li class="d-flex align-items-start mb-2">
+            <span class="me-2">✅</span>
+            <div>{{ suggestion }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">No insights available yet. Add more transactions to see tailored suggestions.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
