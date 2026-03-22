@@ -47,11 +47,23 @@ Designed especially for students and individuals, Budget Bee simplifies financia
 
 ---
 
-## 📸 Screenshots
+## 🎯 Use Case
 
-> *(Add your project screenshots here for better presentation)*
+* Students managing monthly expenses
+* Individuals tracking daily spending
+* Beginners learning financial discipline
 
 ---
+
+## 🚀 Future Enhancements
+
+* 🔐 User Authentication (Login/Signup)
+* ☁️ Cloud Data Storage
+* 📱 Mobile Responsive Design
+* 📈 Advanced Analytics & Predictions
+* 🎙️ Voice-based Expense Entry
+
+
 
 ## ⚙️ Getting Started
 
@@ -72,22 +84,6 @@ cd Budget-Bee
 Open `index.html` in your browser
 
 ---
-
-## 🎯 Use Case
-
-* Students managing monthly expenses
-* Individuals tracking daily spending
-* Beginners learning financial discipline
-
----
-
-## 🚀 Future Enhancements
-
-* 🔐 User Authentication (Login/Signup)
-* ☁️ Cloud Data Storage
-* 📱 Mobile Responsive Design
-* 📈 Advanced Analytics & Predictions
-* 🎙️ Voice-based Expense Entry
 
 ---
 
